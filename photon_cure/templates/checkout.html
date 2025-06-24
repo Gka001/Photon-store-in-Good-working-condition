@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Checkout</h2>
+
+    {% if cart|length == 0 %}
+        <p>Your cart is empty.</p>
+    {% else %}
+        <h4 class="mb-3">Order Summary</h4>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Unit Price</th>
+                    <th>Quantity</th>
+                    <th>Total Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart %}
+                    <tr>
+                        <td>{{ item.product.name }}</td>
+                        <td>₹{{ item.price }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>₹{{ item.total_price }}</td>
+                    </tr>
+                {% endfor %}
+                <tr>
+                    <td colspan="3" class="text-end"><strong>Total</strong></td>
+                    <td><strong>₹{{ cart.get_total_price }}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4 class="mt-5 mb-3">Shipping Information</h4>
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                {{ form.name.label_tag }}  
+                {{ form.name }}
+            </div>
+            <div class="mb-3">
+                {{ form.address.label_tag }}
+                {{ form.address }}
+            </div>
+            <div class="mb-3">
+                {{ form.phone.label_tag }}
+                {{ form.phone }}
+            </div>
+            <button type="submit" class="btn btn-success">Place Order</button>
+        </form>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card mb-4">
+    <img src="{{ product.image.url }}" class="card-img-top" style="max-height: 400px; object-fit: contain;" alt="{{ product.name }}">
+    <div class="card-body">
+        <h2 class="card-title">{{ product.name }}</h2>
+        <p class="card-text">{{ product.description }}</p>
+        <p class="card-text"><strong>₹{{ product.price }}</strong></p>
+        <form action="{% url 'cart:cart_add' product.id %}" method="post" class="mt-3">
+            {% csrf_token %}
+            <input type="hidden" name="quantity" value="1">
+            <button type="submit" class="btn btn-success">Add to Cart</button>
+        </form>
+    </div>
+</div>
+
+<a href="{% url 'product_list' %}" class="btn btn-secondary">← Back to Products</a>
+
+{% endblock content %}

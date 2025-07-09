@@ -6,7 +6,7 @@ def product_list(request):
     return render(request, 'product_list.html', {'products': products})
 
 def product_detail(request, product_id):
-    product = Product.objects.get(id=product_id)  # Get a single product by ID
+    product = get_object_or_404(Product, id=product_id)
     return render(request, 'product_detail.html', {'product': product})
 
 

@@ -5,9 +5,15 @@ from products.models import Product
 
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True) # If using users
-    cart_items = models.ManyToManyField(Cart)
+    #cart_items = models.ManyToManyField(Cart)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.CharField(max_length=255)
+    
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Shipped', 'Shipped'),
+        ('Delivered', 'Delivered'),
+    ]
+    status = models.CharField(max_length=255, choices=STATUS_CHOICES, default='Pending')
     address = models.TextField()
     phone = models.CharField(max_length=15)
     order_date = models.DateTimeField(auto_now_add=True)

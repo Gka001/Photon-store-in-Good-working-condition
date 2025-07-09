@@ -1,0 +1,16 @@
+Hi {{ order.name }},
+
+Thank you for your order from Photon Cure!
+
+Order ID: {{ order.id }}
+Order Total: ₹{{ order.total_price }}
+Shipping Address: {{ order.address }}
+
+Items Ordered:
+{% for item in cart %}
+- {{ item.product.name }} (x{{ item.quantity }}) — ₹{{ item.total_price }}
+{% endfor %}
+
+We’ll notify you once your order ships!
+
+Photon Cure Team

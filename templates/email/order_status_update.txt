@@ -1,0 +1,15 @@
+Hi {{ order.name }},
+
+📢 Your order with Photon Cure (Order ID: {{ order.id }}) has been updated.
+
+🕒 Previous Status: {{ old_status }}  
+✅ New Status: {{ new_status }}
+
+{% if expected_start and expected_end %}
+📦 Expected Delivery: {{ expected_start|date:"M d, Y" }} – {{ expected_end|date:"M d, Y" }}
+{% endif %}
+
+We’ll keep you informed of further updates.
+
+Thank you for shopping with us!
+— Photon Cure Team

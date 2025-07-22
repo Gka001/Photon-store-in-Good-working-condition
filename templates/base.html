@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Photon Cure - The best place for your products!">
+    <title>Photon Cure</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        .product-image {
+            height: 200px;
+            object-fit: contain;
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container d-flex justify-content-between align-items-center w-100">
+        <a class="navbar-brand" href="{% url 'product_list' %}">Photon Cure</a>
+
+        <div>
+            <a href="{% url 'cart:cart_detail' %}" class="btn btn-outline-light me-2">Cart</a>
+
+            {% if user.is_authenticated %}
+                <!-- ✅ ADDED: My Orders button -->
+                <a href="{% url 'orders:order_history' %}" class="btn btn-outline-info me-2">My Orders</a>
+
+                <span class="text-white me-2">Welcome, {{ user.username }}</span>
+
+                <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-warning btn-sm">Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn btn-outline-light me-2">Login</a>
+                <a href="{% url 'register' %}" class="btn btn-outline-light">Register</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h1 class="text-center mb-4">Photon Cure</h1>
+    {% block content %}
+    {% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

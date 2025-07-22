@@ -1,0 +1,14 @@
+Hello Amdin,
+
+The following order has been cancelled by the user:
+
+Order ID: {{ order.id }}
+Name: {{ order.name }}
+Email: {{ order.email }}
+Total Price: ₹{{ order.total_price }}
+Status: {{ order.status }}
+Order Date: {{ order.order_date|date:"M d, Y H:i" }}
+
+Please log in to the admin panel for more details.
+
+-- Photon Cure Store

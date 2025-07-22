@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <h2>User Profile</h2>
+    <p><strong>Username:</strong> {{ user.username }}</p>
+    <p><strong>Email:</strong> {{ user.email|default:"(not provided)" }}</p>
+
+    <div style="margin-top: 10px; margin-bottom: 20px;">
+        <a href="{% url 'edit-profile' %}" class="btn btn-primary">✏️ Edit Profile</a>
+        <a href="{% url 'password_change' %}" class="btn btn-warning">🔒 Change Password</a>
+    </div>
+
+    <hr>
+    <h3>Your Orders</h3>
+    {% if orders %}
+        <ul>
+            {% for order in orders %}
+                <li>Order #{{ order.id }} - {{ order.status }} - {{ order.order_date }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No orders found.</p>
+    {% endif %}
+</div>
+{% endblock %}

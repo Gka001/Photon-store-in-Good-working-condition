@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Order #{{ order.id }} Details</h2>
+
+    <div class="card my-4">
+        <div class="card-body">
+            <p><strong>Status:</strong> {{ order.status }}</p>
+            <p><strong>Order Date:</strong> {{ order.order_date }}</p>
+
+            {% if expected_start and expected_end %}
+                <p><strong>Expected Delivery:</strong> {{ expected_start|date:"M d, Y" }} – {{ expected_end|date:"M d, Y" }}</p>
+            {% elif order.expected_delivery %}
+                <p><strong>Expected Delivery:</strong> {{ order.expected_delivery|date:"M d, Y" }}</p>
+            {% endif %}
+
+            <p><strong>Name:</strong> {{ order.name }}</p>
+            <p><strong>Email:</strong> {{ order.email }}</p>
+            <p><strong>Phone:</strong> {{ order.phone }}</p>
+            <p><strong>Address:</strong> {{ order.address }}</p>
+
+            {% if order.payment_id %}
+                <p><strong>Payment ID:</strong> {{ order.payment_id }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <h4>Items in this order:</h4>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Unit Price</th>
+                <th>Quantity</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items.all %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>₹{{ item.price }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>₹{{ item.subtotal }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="text-end">
+        <h5><strong>Total: ₹{{ order.total_price }}</strong></h5>
+    </div>
+
+    <a href="{% url 'orders:order_history' %}" class="btn btn-secondary mt-3">Back to Order History</a>
+</div>
+{% endblock %}

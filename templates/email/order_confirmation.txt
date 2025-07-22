@@ -1,0 +1,25 @@
+Hi {{ order.name }},
+
+✅ Thank you for your order with Photon Cure!
+
+🧾 Order Summary:
+--------------------------
+Order ID: {{ order.id }}
+Total Amount: ₹{{ order.total_price }}
+Payment ID: {{ order.payment_id|default:"N/A" }}
+
+Shipping Address:  
+{{ order.address }}
+
+Expected Delivery: {{ expected_start|date:"M d, Y" }} – {{ expected_end|date:"M d, Y" }}
+
+📦 Items Ordered:
+--------------------------
+{% for item in cart %}
+- {{ item.product.name }} (x{{ item.quantity }}) — ₹{{ item.total_price }}
+{% endfor %}
+
+🚚 We’ll notify you once your order ships!
+
+Thanks again for choosing Photon Cure!
+— The Photon Cure Team

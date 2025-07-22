@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load custom_filters %}  {# Required for get_item filter #}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Your Order History</h2>
+
+    {% if orders %}
+        <table class="table table-bordered table-striped">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Order ID</th>
+                    <th>Status & Delivery</th>
+                    <th>Total Price</th>
+                    <th>Order Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td>{{ order.id }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if order.status == 'Pending' %} bg-warning
+                                {% elif order.status == 'Shipped' %} bg-primary
+                                {% elif order.status == 'Delivered' %} bg-success
+                                {% elif order.status == 'Failed' %} bg-danger
+                                {% elif order.status == 'Cancelled' %} bg-secondary
+                                {% endif %}
+                            ">
+                                {{ order.status }}
+                            </span><br>
+
+                            {% with range=expected_ranges|get_item:order.id %}
+                                {% if range %}
+                                    <small class="text-muted">
+                                        📦 Expected: {{ range.0|date:"M d" }} – {{ range.1|date:"M d" }}
+                                    </small>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td>₹{{ order.total_price }}</td>
+                        <td>{{ order.order_date|date:"M d, Y H:i" }}</td>
+                        <td>
+                            <a href="{% url 'orders:order_detail' order.id %}" class="btn btn-sm btn-outline-info">View</a>
+                            {% if order.status == 'Pending' %}
+                                <form method="post" action="{% url 'orders:cancel_order' order.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Cancel this order?');">Cancel</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>You have no orders yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Thank You for Your Order!</h2>
+
+    {% if order %}
+        <p><strong>Order ID:</strong> {{ order.id }}</p>
+        <p><strong>Status:</strong> {{ order.status }}</p>
+
+        {% if expected_start and expected_end %}
+            <p><strong>Expected Delivery:</strong> {{ expected_start|date:"M d, Y" }} – {{ expected_end|date:"M d, Y" }}</p>
+        {% endif %}
+
+        <p><strong>Total Price:</strong> ₹{{ order.total_price }}</p>
+
+        {% if order.payment_id %}
+            <p><strong>Payment ID:</strong> {{ order.payment_id }}</p>
+        {% endif %}
+
+        <hr>
+        <h4>Shipping Information</h4>
+        <p><strong>Name:</strong> {{ order.name }}</p>
+        <p><strong>Phone:</strong> {{ order.phone }}</p>
+        <p><strong>Address:</strong> {{ order.address }}</p>
+    {% else %}
+        <p>Order details not found.</p>
+    {% endif %}
+
+    <a href="{% url 'product_list' %}" class="btn btn-primary mt-3">Continue Shopping</a>
+</div>
+{% endblock %}

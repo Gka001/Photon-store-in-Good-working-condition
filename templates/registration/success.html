@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <h2>🎉 Registration Successful!</h2>
+    <p>Welcome to Photon Cure! A welcome email has been sent to your inbox.</p>
+    <a href="{% url 'login' %}" class="btn btn-primary mt-3">Go to Login</a>
+</div>
+{% endblock %}

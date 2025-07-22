@@ -1,105 +1,95 @@
-
 # 🛍️ Photon Cure
 
-**Photon Cure** is a Django-based eCommerce store built for selling products online.  
-It supports background task processing using **Celery** and **Redis**, and includes features like user registration, email notifications, and profile management.
+**Photon Cure** is a modern, full-stack **Django eCommerce application** for selling products online.  
+It includes **user authentication**, **email notifications**, **Celery + Redis for background tasks**, and **payment integration using Razorpay**.
 
 ---
 
-## 🚀 Features
+## 🚀 Key Features
 
-- ✅ User registration & login
-- ✅ Welcome email via Celery & Redis
-- ✅ Custom user model
-- ✅ Profile editing
-- 🛒 Product & order management (in progress)
-- 💳 Razorpay integration (coming soon)
-
----
-
-## ⚙️ Tech Stack
-
-- **Backend**: Django, Python
-- **Async Tasks**: Celery with Redis as broker
-- **Database**: SQLite (default, replaceable with PostgreSQL)
-- **Email**: SMTP backend (e.g., Gmail)
-- **Frontend**: HTML, Bootstrap (or Tailwind optional)
+- 👤 User registration, login & profile management
+- 📧 Welcome emails using Celery & Redis
+- 🛒 Product listing, cart, and order management
+- 💳 Razorpay payment integration
+- 📦 Expected delivery date calculation (metro vs non-metro)
+- 🧑‍💼 Django Admin for managing orders, users, and products
+- 📩 Order status update emails with estimated delivery window
+- 🔒 Custom user model for flexibility
 
 ---
 
-## 🧰 Setup Instructions
+## 🧰 Tech Stack
 
-### 1. Clone the Repository
+| Layer        | Technology               |
+|--------------|--------------------------|
+| Backend      | Django (Python)          |
+| Task Queue   | Celery + Redis           |
+| Database     | SQLite (dev) / PostgreSQL (optional) |
+| Email        | SMTP (e.g., Gmail)       |
+| Frontend     | HTML, Bootstrap (or Tailwind CSS) |
+| Payment      | Razorpay                 |
+
+---
+
+## ⚙️ Getting Started
+
+### 1. Clone the Project
+
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Gka001/photon-cure.git
 cd photon_cure
-```
 
-### 2. Create & Activate Virtual Environment
-```bash
+2. Set Up Virtual Environment
+bash
+
 python -m venv venv
 source venv/bin/activate
-```
-
-### 3. Install Dependencies
-```bash
+3. Install Python Requirements
+bash
 pip install -r requirements.txt
-```
 
-### 4. Apply Migrations
-```bash
+4. Apply Migrations
+bash
 python manage.py migrate
-```
 
-### 5. Start Development Environment
-```bash
+5. Start All Services (Django + Celery + Redis)
+bash
 ./start_dev.sh
-```
 
-### 6. Create Superuser (first time only)
-```bash
+6. Create Superuser (first time only)
+bash
 python manage.py createsuperuser
-```
 
----
+🧪 Testing Email Functionality
+Make sure Redis and Celery are running (./start_dev.sh)
 
-## 🛑 Stop Development Environment
+Register a new user
 
-```bash
+Check your email inbox (and spam) for the welcome email
+
+🛑 Stopping the Project
+bash
 ./stop_dev.sh
-```
 
----
+📝 Developer Notes
+📁 Use dev_commands.md for useful Django/Celery/Redis CLI shortcuts
 
-## 📘 Developer Notes
 
-For detailed CLI commands (Celery, Redis, Django), see [`dev_commands.md`](./dev_commands.md).
+🧪 Test product orders, payments, and delivery dates from the user dashboard
 
----
 
-## 📬 Welcome Email Testing
+🔄 Automated Git backups via backup_to_git.sh (cron job)
 
-To test welcome email:
-- Make sure Redis, Celery, and Django are running (`./start_dev.sh`)
-- Register a new user
-- Check inbox for welcome email
+🧑‍💻 Contributing
+Fork the repository
 
----
+Create a new feature branch
+git checkout -b feature/your-feature-name
 
-## 🤝 Contributing
+Commit and push your changes
 
-1. Fork the repo
-2. Create your feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes
-4. Push to the branch
-5. Create a pull request
+Open a pull request
 
----
+📄 License
+Licensed under the MIT License — free to use and modify.
 
-## 📄 License
-
-MIT License — free to use and modify.
-
----
-
-**Made with ❤️ using Django**

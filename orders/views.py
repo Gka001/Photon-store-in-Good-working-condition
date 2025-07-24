@@ -22,7 +22,7 @@ def checkout(request):
     if request.method == 'POST':
         form = CheckoutForm(request.POST)
         if form.is_valid():
-            return render(request, 'checkout.html', {
+            return render(request, 'cart/checkout.html', {
                 'cart': cart,
                 'form': form,
                 'razorpay_key_id': settings.RAZORPAY_KEY_ID
@@ -30,7 +30,7 @@ def checkout(request):
     else:
         form = CheckoutForm()
 
-    return render(request, 'checkout.html', {
+    return render(request, 'cart/checkout.html', {
         'cart': cart,
         'form': form,
         'razorpay_key_id': settings.RAZORPAY_KEY_ID
@@ -99,7 +99,7 @@ def razorpay_payment(request):
             # Send order confirmation email
             if email:
                 subject = f"Photon Cure - Order #{order.id} Confirmation"
-                message = render_to_string('email/order_confirmation.txt', {
+                message = render_to_string('orders/email/order_confirmation.txt', {
                     'order': order,
                     'cart': cart,
                     'expected_start': order.expected_delivery_range[0],  # ✅ FIXED
@@ -133,7 +133,7 @@ def order_success(request):
     })
 
 def payment_cancel(request):
-    return render(request, 'payment_cancel.html')
+    return render(request, 'orders/payment_cancel.html')
 
 @login_required
 def order_history(request):
@@ -171,7 +171,7 @@ def cancel_order(request, order_id):
 
             # Send cancellation email to admin
             subject = f"Photon Cure - Order #{order.id} Cancelled"
-            message = render_to_string('email/order_cancelled.txt', {
+            message = render_to_string('orders/email/order_cancelled.txt', {
                 'order': order,
                 'user': request.user,
                 'expected_start': None,

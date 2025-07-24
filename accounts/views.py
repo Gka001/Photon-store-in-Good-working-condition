@@ -20,7 +20,7 @@ def register(request):
 
             email = user.email
             if email:
-                html_message = render_to_string('emails/welcome_email.html', {'username': user.username})
+                html_message = render_to_string('accounts/email/welcome_email.html', {'username': user.username})
                 plain_message = strip_tags(html_message)
                 send_welcome_email_task.delay(
                     subject='Welcome to Photon Cure!',
@@ -35,7 +35,7 @@ def register(request):
             messages.error(request, 'Please correct the errors below.')
     else:
         form = CustomUserCreationForm()
-    return render(request, 'registration/register.html', {'form': form})
+    return render(request, 'accounts/register.html', {'form': form})
 
 @login_required
 def profile_view(request):
@@ -61,4 +61,4 @@ def edit_profile(request):
     return render(request, 'accounts/edit_profile.html', {'form': form})
 
 def registration_success(request):
-    return render(request, 'registration/success.html')
+    return render(request, 'accounts/registration_success.html')

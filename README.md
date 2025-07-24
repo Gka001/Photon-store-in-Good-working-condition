@@ -1,95 +1,123 @@
-# 🛍️ Photon Cure
+# 🛒 Photon Cure – Django eCommerce Store
 
-**Photon Cure** is a modern, full-stack **Django eCommerce application** for selling products online.  
-It includes **user authentication**, **email notifications**, **Celery + Redis for background tasks**, and **payment integration using Razorpay**.
+Photon Cure is a full-featured eCommerce web application built with Django. It supports product listings, shopping cart, order management, Razorpay payments, and user authentication, all wrapped in a clean and responsive UI.
 
 ---
 
-## 🚀 Key Features
+## 🚀 Features
 
-- 👤 User registration, login & profile management
-- 📧 Welcome emails using Celery & Redis
-- 🛒 Product listing, cart, and order management
-- 💳 Razorpay payment integration
-- 📦 Expected delivery date calculation (metro vs non-metro)
-- 🧑‍💼 Django Admin for managing orders, users, and products
-- 📩 Order status update emails with estimated delivery window
-- 🔒 Custom user model for flexibility
+- 🔐 User registration, login, password reset, and profile management  
+- 📦 Product listing, detail view, categories  
+- 🛒 Add to cart, quantity updates, remove items  
+- 💳 Razorpay payment gateway integration  
+- 📧 Email notifications (welcome emails, order updates)  
+- 🚚 Order tracking with delivery date range (metro vs non-metro logic)  
+- 📊 Admin dashboard for order and product management  
+- 📱 Mobile responsive layout  
 
 ---
 
 ## 🧰 Tech Stack
 
-| Layer        | Technology               |
-|--------------|--------------------------|
-| Backend      | Django (Python)          |
-| Task Queue   | Celery + Redis           |
-| Database     | SQLite (dev) / PostgreSQL (optional) |
-| Email        | SMTP (e.g., Gmail)       |
-| Frontend     | HTML, Bootstrap (or Tailwind CSS) |
-| Payment      | Razorpay                 |
+| Layer           | Technology                    |
+|------------------|-------------------------------|
+| Backend          | Django, Django REST Framework |
+| Frontend         | Django templates + Bootstrap  |
+| Payments         | Razorpay API                  |
+| Database         | SQLite (dev) / PostgreSQL (prod) |
+| Background Tasks | Celery + Redis (for emails)   |
+| Hosting          | PythonAnywhere / Railway / etc. |
 
 ---
 
-## ⚙️ Getting Started
+## 🔧 Setup Instructions
 
-### 1. Clone the Project
+1. **Clone the Repository**
 
 ```bash
-git clone https://github.com/Gka001/photon-cure.git
+git clone https://github.com/yourusername/photon_cure.git
 cd photon_cure
+```
 
-2. Set Up Virtual Environment
-bash
+2. **Create Virtual Environment**
 
+```bash
 python -m venv venv
-source venv/bin/activate
-3. Install Python Requirements
-bash
+source venv/bin/activate   # On Windows: venv\Scripts\activate
+```
+
+3. **Install Requirements**
+
+```bash
 pip install -r requirements.txt
+```
 
-4. Apply Migrations
-bash
+4. **Configure Environment**
+
+Create a `.env` file in the root:
+
+```
+DEBUG=True
+SECRET_KEY=your_secret_key
+RAZORPAY_KEY_ID=your_key_id
+RAZORPAY_KEY_SECRET=your_key_secret
+EMAIL_HOST_USER=your_email@example.com
+EMAIL_HOST_PASSWORD=your_app_password
+```
+
+5. **Run Migrations**
+
+```bash
 python manage.py migrate
+```
 
-5. Start All Services (Django + Celery + Redis)
-bash
-./start_dev.sh
+6. **Create Superuser (Admin Login)**
 
-6. Create Superuser (first time only)
-bash
+```bash
 python manage.py createsuperuser
+```
 
-🧪 Testing Email Functionality
-Make sure Redis and Celery are running (./start_dev.sh)
+7. **Start the Server**
 
-Register a new user
+```bash
+python manage.py runserver
+```
 
-Check your email inbox (and spam) for the welcome email
+---
 
-🛑 Stopping the Project
-bash
-./stop_dev.sh
+## 🧪 Testing
 
-📝 Developer Notes
-📁 Use dev_commands.md for useful Django/Celery/Redis CLI shortcuts
+- Register a new user  
+- Browse products, add to cart  
+- Checkout using Razorpay test mode  
+- Admin access: `/admin/`  
+- Track delivery and status from user/order views  
 
+---
 
-🧪 Test product orders, payments, and delivery dates from the user dashboard
+## 📂 Project Structure
 
+```
+photon_cure/
+├── accounts/       # User registration, login, profile
+├── products/       # Product models, views, categories
+├── cart/           # Add/remove/update cart logic
+├── orders/         # Order model, Razorpay, delivery system
+├── templates/      # HTML templates (Bootstrap-based)
+├── email/          # Email templates (welcome, order status)
+├── static/         # Static assets (CSS, JS, images)
+└── manage.py
+```
 
-🔄 Automated Git backups via backup_to_git.sh (cron job)
+---
 
-🧑‍💻 Contributing
-Fork the repository
+## 📧 Contact
 
-Create a new feature branch
-git checkout -b feature/your-feature-name
+Created by [Your Name](https://github.com/yourusername)  
+Email: your_email@example.com
 
-Commit and push your changes
+---
 
-Open a pull request
+## 📝 License
 
-📄 License
-Licensed under the MIT License — free to use and modify.
-
+This project is licensed under the [MIT License](LICENSE).

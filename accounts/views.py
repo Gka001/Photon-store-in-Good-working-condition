@@ -7,22 +7,21 @@ from django.utils.html import strip_tags
 
 from orders.models import Order
 from .forms import UserProfileForm, CustomUserCreationForm
-from .models import UserProfile  # ✅ Needed for editing profile
+from .models import UserProfile
 from .tasks import send_welcome_email_task
-
 
 def register(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            email = user.email
+            # Automatically create a UserProfile if signals are not used
+            UserProfile.objects.get_or_create(user=user)
 
+            email = user.email
             if email:
-                # ✅ Send welcome email using Celery
                 html_message = render_to_string('emails/welcome_email.html', {'username': user.username})
                 plain_message = strip_tags(html_message)
-
                 send_welcome_email_task.delay(
                     subject='Welcome to Photon Cure!',
                     plain_message=plain_message,
@@ -30,16 +29,13 @@ def register(request):
                     recipient_list=[email],
                     html_message=html_message
                 )
-
             messages.success(request, 'Account created successfully! A welcome email has been sent.')
             return redirect('registration-success')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
         form = CustomUserCreationForm()
-
     return render(request, 'registration/register.html', {'form': form})
-
 
 @login_required
 def profile_view(request):
@@ -49,10 +45,9 @@ def profile_view(request):
         'orders': orders
     })
 
-
 @login_required
 def edit_profile(request):
-    # ✅ Get or create UserProfile instance for logged-in user
+    # Make sure user has profile (in case signals not working)
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
 
     if request.method == 'POST':
@@ -63,9 +58,7 @@ def edit_profile(request):
             return redirect('user-profile')
     else:
         form = UserProfileForm(instance=user_profile)
-
     return render(request, 'accounts/edit_profile.html', {'form': form})
-
 
 def registration_success(request):
     return render(request, 'registration/success.html')

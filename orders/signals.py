@@ -26,7 +26,7 @@ def notify_user_on_status_change(sender, instance, **kwargs):
 
         if instance.email:
             subject = f"Photon Cure - Order #{instance.id} Status Update"
-            message = render_to_string('email/order_status_update.txt', {
+            message = render_to_string('orders/email/order_status_update.txt', {
                 'order': instance,
                 'old_status': previous.status,
                 'new_status': instance.status,

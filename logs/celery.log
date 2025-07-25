@@ -4,10 +4,10 @@ nohup: ignoring input
  
  -------------- celery@GowPC v5.5.3 (immunity)
 --- ***** ----- 
--- ******* ---- Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39 2025-07-24 14:44:50
+-- ******* ---- Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39 2025-07-25 10:22:58
 - *** --- * --- 
 - ** ---------- [config]
-- ** ---------- .> app:         photon_cure:0x74a41f09a870
+- ** ---------- .> app:         photon_cure:0x705cbeec89b0
 - ** ---------- .> transport:   redis://localhost:6379/0
 - ** ---------- .> results:     disabled://
 - *** --- * --- .> concurrency: 16 (prefork)
@@ -21,10 +21,7 @@ nohup: ignoring input
   . accounts.tasks.send_welcome_email_task
   . photon_cure.celery.debug_task
 
-[2025-07-24 14:44:51,900: INFO/MainProcess] Connected to redis://localhost:6379/0
-[2025-07-24 14:44:51,904: INFO/MainProcess] mingle: searching for neighbors
-[2025-07-24 14:44:52,911: INFO/MainProcess] mingle: all alone
-[2025-07-24 14:44:52,918: INFO/MainProcess] celery@GowPC ready.
-[2025-07-24 14:53:49,339: INFO/MainProcess] Task accounts.tasks.send_welcome_email_task[00f0398e-8253-423b-ba63-46264bf428b2] received
-[2025-07-24 14:53:53,741: WARNING/ForkPoolWorker-14] ✅ Welcome email sent to ['djangogowtham@gmail.com']
-[2025-07-24 14:53:53,742: INFO/ForkPoolWorker-14] Task accounts.tasks.send_welcome_email_task[00f0398e-8253-423b-ba63-46264bf428b2] succeeded in 4.4019795449985395s: None
+[2025-07-25 10:22:59,989: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2025-07-25 10:22:59,992: INFO/MainProcess] mingle: searching for neighbors
+[2025-07-25 10:23:01,001: INFO/MainProcess] mingle: all alone
+[2025-07-25 10:23:01,051: INFO/MainProcess] celery@GowPC ready.

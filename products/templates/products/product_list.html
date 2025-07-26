@@ -3,10 +3,29 @@
 {% block content %}
 <h2 class="mb-4 text-center">All Products</h2>
 
-<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 mb-5">
-    
-    {% for product in products %}
+<!-- Search and Filter Form -->
+<form method="get" class="row row-cols-1 row-cols-md-3 g-2 align-items-end mb-4">
+    <div class="col">
+        <input type="text" name="q" class="form-control" placeholder="Search products..." value="{{ query }}">
+    </div>
+    <div class="col">
+        <select name="category" class="form-select">
+            <option value="">All Categories</option>
+            {% for category in categories %}
+                <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col">
+        <button type="submit" class="btn btn-primary w-100">Search</button>
+    </div>
+</form>
 
+<!-- Product Grid -->
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 mb-5">
+    {% for product in products %}
     <div class="col">
         <div class="card h-100 shadow-sm">
             <div class="d-flex justify-content-center">
@@ -14,7 +33,6 @@
                     <img src="{{ product.image.url }}" class="card-img-top product-image" alt="{{ product.name }}">
                 </a>
             </div>
-            
             <div class="card-body d-flex flex-column">
                 <h5 class="card-title">
                     <a href="{% url 'product_detail' product_id=product.id %}">{{ product.name }}</a>
@@ -24,9 +42,11 @@
             </div>
         </div>
     </div>
-
+    {% empty %}
+    <div class="col-12 text-center">
+        <p class="text-muted">No products found.</p>
+    </div>
     {% endfor %}
-
 </div>
 
 {% endblock %}

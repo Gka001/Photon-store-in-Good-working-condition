@@ -1,28 +1,32 @@
 #!/bin/bash
 
-# Activate virtual environment (adjust path if needed)
+# Activate virtual environment
 source venv/bin/activate
+echo "[✓] Virtual environment activated."
 
-# Ensure logs directory exists
-mkdir -p logs
-
-# 1. Start Redis server if not running
-if ! redis-cli ping | grep -q PONG; then
-    echo "🚀 Starting Redis server..."
-    nohup redis-server > logs/redis.log 2>&1 &
-    sleep 2  # give Redis some time to start
+# Start Redis if not already running
+if ! pgrep -x "redis-server" > /dev/null; then
+    echo "[✓] Starting Redis server in background..."
+    redis-server --daemonize yes
 else
-    echo "✅ Redis is already running."
+    echo "[✓] Redis is already running."
 fi
 
-# 2. Start Celery if not already running
-if ! pgrep -f 'celery -A photon_cure'; then
-    echo "🚀 Starting Celery worker..."
+# Start Celery worker in background using nohup (keeps running even after Ctrl+C)
+if ! pgrep -f "celery -A photon_cure worker" > /dev/null; then
+    echo "[✓] Starting Celery worker in background..."
     nohup celery -A photon_cure worker --loglevel=info > logs/celery.log 2>&1 &
 else
-    echo "✅ Celery worker is already running."
+    echo "[✓] Celery worker is already running."
 fi
 
-# 3. Start Django server in foreground
-echo "🚀 Starting Django development server..."
-exec python manage.py runserver
+# Create logs folder if it doesn't exist
+mkdir -p logs
+
+# Start Django development server (runs in foreground)
+echo "[✓] Starting Django development server..."
+python manage.py runserver
+
+# After Django stops
+echo "[!] Django server stopped. Celery and Redis are still running."
+echo "[✓] Virtual environment is still active. You can keep working."

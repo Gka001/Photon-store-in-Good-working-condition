@@ -14,6 +14,7 @@ import hmac
 import hashlib
 from django.contrib import messages
 from .utils import get_delivery_range
+from products.models import Review
 
 @login_required
 def checkout(request):
@@ -137,17 +138,24 @@ def payment_cancel(request):
 
 @login_required
 def order_history(request):
-    orders = Order.objects.filter(user=request.user).order_by('-order_date')
+    orders = Order.objects.filter(user=request.user).order_by('-order_date').prefetch_related('items__product')
 
     delivery_ranges = {
         order.id: get_delivery_range(order)
         for order in orders
     }
 
+    # ✅ Get IDs of products already reviewed by the user
+    reviewed_products = set(
+        Review.objects.filter(user=request.user).values_list('product_id', flat=True)
+    )
+
     return render(request, 'orders/order_history.html', {
         'orders': orders,
         'delivery_ranges': delivery_ranges,
+        'reviewed_products': reviewed_products,  # ✅ Send to template
     })
+
 
 @login_required
 def order_detail(request, order_id):

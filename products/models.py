@@ -1,4 +1,9 @@
 from django.db import models
+from django.contrib.postgres.indexes import GinIndex
+from django.contrib.postgres.search import SearchVectorField
+from django.db.models import Avg
+from django.conf import settings
+
 
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -7,17 +12,40 @@ class Category(models.Model):
         verbose_name_plural = 'Categories'
 
     def __str__(self):
-        return self.name    
+        return self.name
 
 
 class Product(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    image = models.ImageField(upload_to='products/')
-    Category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    image = models.ImageField(upload_to='product_images/')
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+
+    search_vector = SearchVectorField(null=True, editable=False)
 
     def __str__(self):
         return self.name
-    
-    
+
+    class Meta:
+        indexes = [
+            GinIndex(fields=["search_vector"]),
+        ]
+
+    def average_rating(self):
+        return self.reviews.aggregate(avg=Avg('rating'))['avg'] or 0
+
+
+class Review(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    rating = models.IntegerField(choices=[(i, str(i)) for i in range(1, 6)])
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('product', 'user')  # One review per user per product
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Review for {self.product.name} by {self.user.username}"

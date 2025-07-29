@@ -31,6 +31,21 @@ class Cart:
             del self.cart[product_id]
             self.save()
 
+    def increase_quantity(self, product):
+        product_id = str(product.id)        
+        if product_id in self.cart:
+            self.cart[product_id]['quantity'] +=1
+            self.save()
+
+    def decrease_quantity(self, product):
+        product_id = str(product.id)        
+        if product_id in self.cart:
+            if self.cart[product_id]['quantity'] > 1:
+                self.cart[product_id]['quantity'] -= 1
+            else:
+                del self.cart[product_id]    
+            self.save()    
+
     def __iter__(self):
         product_ids = self.cart.keys()
         products = Product.objects.filter(id__in=product_ids)

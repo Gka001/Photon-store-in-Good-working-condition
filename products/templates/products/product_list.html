@@ -3,10 +3,10 @@
 {% block content %}
 <h2 class="mb-4 text-center">All Products</h2>
 
-<!-- Search and Filter Form -->
-<form method="get" class="row row-cols-1 row-cols-md-3 g-2 align-items-end mb-4">
+<!-- Search, Filter, and Sort Form -->
+<form method="get" class="row row-cols-1 row-cols-md-4 g-2 align-items-end mb-4">
     <div class="col">
-        <input type="text" name="q" class="form-control" placeholder="Search products..." value="{{ query }}">
+        <input type="text" name="q" class="form-control" placeholder="Search products..." value="{{ query|default_if_none:'' }}">
     </div>
     <div class="col">
         <select name="category" class="form-select">
@@ -19,7 +19,17 @@
         </select>
     </div>
     <div class="col">
-        <button type="submit" class="btn btn-primary w-100">Search</button>
+        <select name="sort" class="form-select">
+            <option value="">Sort By</option>
+            <option value="price_asc" {% if selected_sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+            <option value="price_desc" {% if selected_sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+            <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Newest</option>
+            <option value="name_asc" {% if selected_sort == 'name_asc' %}selected{% endif %}>Name: A–Z</option>
+            <option value="name_desc" {% if selected_sort == 'name_desc' %}selected{% endif %}>Name: Z–A</option>
+        </select>
+    </div>
+    <div class="col">
+        <button type="submit" class="btn btn-primary w-100">Apply</button>
     </div>
 </form>
 
@@ -29,16 +39,47 @@
     <div class="col">
         <div class="card h-100 shadow-sm">
             <div class="d-flex justify-content-center">
-                <a href="{% url 'product_detail' product_id=product.id %}">
-                    <img src="{{ product.image.url }}" class="card-img-top product-image" alt="{{ product.name }}">
+                <a href="{% url 'products:product_detail' product_id=product.id %}">
+                    <img src="{{ product.image.url }}" class="card-img-top product-image" alt="{{ product.name }}" onerror="this.src='/static/images/default.png';">
                 </a>
             </div>
             <div class="card-body d-flex flex-column">
                 <h5 class="card-title">
-                    <a href="{% url 'product_detail' product_id=product.id %}">{{ product.name }}</a>
+                    <a href="{% url 'products:product_detail' product_id=product.id %}">{{ product.name }}</a>
                 </h5>
                 <p class="card-text">{{ product.description|truncatewords:15 }}</p>
-                <div class="mt-auto fw-bold text-primary">₹{{ product.price }}</div>
+
+                {% if product.average_rating %}
+                    <div class="mb-2 text-warning small">
+                        <a href="{% url 'products:product_detail' product_id=product.id %}#reviews" class="text-warning text-decoration-none">
+                            {% for i in "12345" %}
+                               {% with star=i|add:"0"|floatformat:1 %}
+                                    {% if product.average_rating >= star %}
+                                        ★
+                                    {% elif product.average_rating >= star|floatformat:1|add:"-0.5"|floatformat:1 %}
+                                        ☆
+                                    {% else %}
+                                        ☆
+                                    {% endif %}
+                                {% endwith %}
+                           {% endfor %}
+
+                            <span class="text-muted">({{ product.average_rating|floatformat:1 }}/5)</span>
+                            <span class="text-muted">- {{ product.review_count }} review{{ product.review_count|pluralize }}</span>
+                        </a>
+                    </div>
+                {% endif %}
+
+                <div class="fw-bold text-primary mb-2">₹{{ product.price }}</div>
+
+                <form class="add-to-cart-form" data-product-id="{{ product.id }}" action="{% url 'cart:cart_add' product_id=product.id %}" method="post">
+                    {% csrf_token %}
+                    <input type="number" name="quantity" value="1" min="1" class="form-control form-control-sm mb-2" required>
+                    <input type="hidden" name="override" value="false">
+                    <button type="submit" class="btn btn-sm btn-outline-primary w-100">
+                        Add to Cart
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -49,4 +90,71 @@
     {% endfor %}
 </div>
 
+<script>
+document.querySelectorAll('.add-to-cart-form').forEach(form => {
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const csrfToken = this.querySelector('[name=csrfmiddlewaretoken]').value;
+        const quantity = this.querySelector('[name=quantity]').value;
+        const override = this.querySelector('[name=override]').value;
+
+        try {
+            const response = await fetch(this.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: new URLSearchParams({
+                    'quantity': quantity,
+                    'override': override
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: data.message || 'Added to cart!',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true
+                });
+
+                const countEl = document.getElementById("cart-count");
+                if (countEl && data.cart_count !== undefined) {
+                    countEl.textContent = data.cart_count;
+                }
+
+                fetch('/cart/mini-preview/')
+                    .then(r => r.json())
+                    .then(d => {
+                        const miniCart = document.getElementById("mini-cart-container");
+                        if (miniCart) miniCart.innerHTML = d.html;
+                    });
+
+            } else {
+                throw new Error('Failed to add');
+            }
+
+        } catch (err) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'error',
+                title: 'Failed to add to cart.',
+                showConfirmButton: false,
+                timer: 2000,
+                timerProgressBar: true
+            });
+            console.error(err);
+        }
+    });
+});
+</script>
 {% endblock %}

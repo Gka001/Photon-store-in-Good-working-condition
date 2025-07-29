@@ -1,0 +1,16 @@
+<div id="mini-cart-preview">
+  {% if cart %}
+    <ul class="space-y-2">
+      {% for item in cart %}
+        <li class="flex justify-between items-center">
+          <span>{{ item.product.name }}</span>
+          <span>× {{ item.quantity }}</span>
+        </li>
+      {% endfor %}
+      <li class="text-right font-semibold">Total: ₹{{ cart.get_total_price }}</li>
+    </ul>
+    <a href="{% url 'cart:cart_detail' %}" class="btn btn-sm mt-2">Go to Cart</a>
+  {% else %}
+    <p>Your cart is empty.</p>
+  {% endif %}
+</div>

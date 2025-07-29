@@ -6,7 +6,15 @@
     <div class="card-body">
         <h2 class="card-title">{{ product.name }}</h2>
         <p class="card-text">{{ product.description }}</p>
+
+        <!-- Review Summary -->
+        <div class="mb-3">
+            <span class="badge bg-warning text-dark">★ {{ average_rating|floatformat:1 }} / 5</span>
+            <span class="text-muted">({{ reviews.count }} reviews)</span>
+        </div>
+
         <p class="card-text"><strong>₹{{ product.price }}</strong></p>
+
         <form action="{% url 'cart:cart_add' product.id %}" method="post" class="mt-3">
             {% csrf_token %}
             <input type="hidden" name="quantity" value="1">
@@ -15,6 +23,25 @@
     </div>
 </div>
 
-<a href="{% url 'product_list' %}" class="btn btn-secondary">← Back to Products</a>
+<!-- User Reviews Section -->
+<div class="mt-5">
+    <h4>Customer Reviews</h4>
+    {% if reviews %}
+        <ul class="list-group">
+            {% for review in reviews %}
+                <li class="list-group-item">
+                    <strong>{{ review.user.username }}</strong>
+                    <span class="text-warning">★ {{ review.rating }}</span>
+                    <br>
+                    <small class="text-muted">{{ review.created_at|date:"M d, Y" }}</small>
+                    <p class="mt-2 mb-0">{{ review.comment|linebreaks }}</p>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">No reviews yet. Be the first to review this product!</p>
+    {% endif %}
+</div>
 
+<a href="{% url 'products:product_list' %}" class="btn btn-secondary mt-4">← Back to Products</a>
 {% endblock content %}

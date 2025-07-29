@@ -39,6 +39,13 @@ def product_list(request):
         except ValueError:
             pass
 
+    # Annotate with average rating and review count
+    products = products.annotate(
+        average_rating=Avg('reviews__rating'),
+        review_count=Count('reviews')
+    )
+
+    # Sort options
     if sort == 'price_asc':
         products = products.order_by('price')
     elif sort == 'price_desc':
@@ -49,11 +56,10 @@ def product_list(request):
         products = products.order_by('name')
     elif sort == 'name_desc':
         products = products.order_by('-name')
-
-    products = products.annotate(
-        average_rating=Avg('reviews__rating'),
-        review_count=Count('reviews')
-    )
+    elif sort == 'rating_high_low':
+        products = products.order_by('-average_rating')
+    elif sort == 'rating_low_high':
+        products = products.order_by('average_rating')
 
     return render(request, 'products/product_list.html', {
         'products': products,
@@ -81,7 +87,6 @@ def product_detail(request, product_id):
 def add_review(request, product_id):
     product = get_object_or_404(Product, id=product_id)
 
-    # Prevent multiple reviews from same user
     if product.reviews.filter(user=request.user).exists():
         messages.warning(request, "You have already reviewed this product.")
         return redirect('orders:order_history')

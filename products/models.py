@@ -21,6 +21,7 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     image = models.ImageField(upload_to='product_images/')
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    stock = models.PositiveBigIntegerField(default=0)
 
     search_vector = SearchVectorField(null=True, editable=False)
 
@@ -34,6 +35,9 @@ class Product(models.Model):
 
     def average_rating(self):
         return self.reviews.aggregate(avg=Avg('rating'))['avg'] or 0
+    
+    def is_in_stock(self):
+        return self.stock > 0
 
 
 class Review(models.Model):

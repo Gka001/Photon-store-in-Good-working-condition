@@ -8,29 +8,21 @@ from django.conf import settings
 from django.template.loader import render_to_string
 import razorpay
 import json
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
 import hmac
 import hashlib
 from django.contrib import messages
 from .utils import get_delivery_range
-from products.models import Review
+from products.models import Review, Product
+from django.db import transaction
+from django.urls import reverse
+
 
 @login_required
 def checkout(request):
     cart = Cart(request)
-
-    if request.method == 'POST':
-        form = CheckoutForm(request.POST)
-        if form.is_valid():
-            return render(request, 'cart/checkout.html', {
-                'cart': cart,
-                'form': form,
-                'razorpay_key_id': settings.RAZORPAY_KEY_ID
-            })
-    else:
-        form = CheckoutForm()
-
+    form = CheckoutForm()
     return render(request, 'cart/checkout.html', {
         'cart': cart,
         'form': form,
@@ -41,7 +33,7 @@ def checkout(request):
 def create_razorpay_order(request):
     if request.method == "POST":
         cart = Cart(request)
-        total_amount = int(cart.get_total_price() * 100)  # paise
+        total_amount = int(cart.get_total_price() * 100)
 
         client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
         order_data = {
@@ -57,20 +49,25 @@ def create_razorpay_order(request):
         })
 
 @csrf_exempt
+@transaction.atomic
 def razorpay_payment(request):
     cart = Cart(request)
 
     if request.method == 'POST':
-        name = request.POST.get('name')
-        address = request.POST.get('address')
-        phone = request.POST.get('phone')
-        email = request.POST.get('email')
+        data = json.loads(request.body)
 
-        razorpay_payment_id = request.POST.get('razorpay_payment_id')
-        razorpay_order_id = request.POST.get('razorpay_order_id')
-        razorpay_signature = request.POST.get('razorpay_signature')
+        name = data.get('name')
+        address = data.get('address')
+        city = data.get('city')
+        state = data.get('state')
+        pincode = data.get('pincode')
+        phone = data.get('phone')
+        email = data.get('email')
 
-        # Verify Razorpay Signature
+        razorpay_payment_id = data.get('razorpay_payment_id')
+        razorpay_order_id = data.get('razorpay_order_id')
+        razorpay_signature = data.get('razorpay_signature')
+
         generated_signature = hmac.new(
             key=bytes(settings.RAZORPAY_KEY_SECRET, 'utf-8'),
             msg=bytes(razorpay_order_id + "|" + razorpay_payment_id, 'utf-8'),
@@ -78,9 +75,18 @@ def razorpay_payment(request):
         ).hexdigest()
 
         if generated_signature == razorpay_signature:
+            for item in cart:
+                product = item['product']
+                quantity = item['quantity']
+                if product.stock < quantity:
+                    return JsonResponse({'success': False, 'error': f"Insufficient stock for {product.name}"})
+
             order = Order.objects.create(
                 name=name,
                 address=address,
+                city=city,
+                state=state,
+                pincode=pincode,
                 phone=phone,
                 email=email,
                 total_price=cart.get_total_price(),
@@ -90,29 +96,38 @@ def razorpay_payment(request):
             )
 
             for item in cart:
+                product = item['product']
+                quantity = item['quantity']
+                price = item['price']
+
                 OrderItem.objects.create(
                     order=order,
-                    product=item['product'],
-                    price=item['price'],
-                    quantity=item['quantity']
+                    product=product,
+                    price=price,
+                    quantity=quantity
                 )
 
-            # Send order confirmation email
+                product.stock -= quantity
+                product.save()
+
             if email:
                 subject = f"Photon Cure - Order #{order.id} Confirmation"
                 message = render_to_string('orders/email/order_confirmation.txt', {
                     'order': order,
                     'cart': cart,
-                    'expected_start': order.expected_delivery_range[0],  # ✅ FIXED
-                    'expected_end': order.expected_delivery_range[1],    # ✅ FIXED
+                    'expected_start': order.expected_delivery_range[0],
+                    'expected_end': order.expected_delivery_range[1],
                 })
                 send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [email])
 
             request.session['latest_order_id'] = order.id
             cart.clear()
-            return redirect('orders:order_success')
+            return JsonResponse({'success': True, 'redirect_url': reverse('orders:order_success')})
 
-        return redirect('orders:payment_cancel')
+
+        # Signature mismatch
+        return JsonResponse({'success': False, 'error': 'Payment verification failed'}, status=400)
+
 
 def order_success(request):
     order_id = request.session.get('latest_order_id')
@@ -145,7 +160,6 @@ def order_history(request):
         for order in orders
     }
 
-    # ✅ Get IDs of products already reviewed by the user
     reviewed_products = set(
         Review.objects.filter(user=request.user).values_list('product_id', flat=True)
     )
@@ -153,9 +167,8 @@ def order_history(request):
     return render(request, 'orders/order_history.html', {
         'orders': orders,
         'delivery_ranges': delivery_ranges,
-        'reviewed_products': reviewed_products,  # ✅ Send to template
+        'reviewed_products': reviewed_products,
     })
-
 
 @login_required
 def order_detail(request, order_id):
@@ -177,7 +190,6 @@ def cancel_order(request, order_id):
             order.status = 'Cancelled'
             order.save()
 
-            # Send cancellation email to admin
             subject = f"Photon Cure - Order #{order.id} Cancelled"
             message = render_to_string('orders/email/order_cancelled.txt', {
                 'order': order,

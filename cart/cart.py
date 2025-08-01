@@ -66,3 +66,12 @@ class Cart:
     def clear(self):
         del self.session['cart']
         self.save()
+
+    def get_quantity(self, product):
+        """
+        Returns the quantity of a specific product in the cart.
+        """
+        product_id = str(product.id)
+        if product_id in self.cart:
+            return self.cart[product_id]['quantity']
+        return 0

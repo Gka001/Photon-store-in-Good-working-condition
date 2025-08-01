@@ -4,10 +4,10 @@ nohup: ignoring input
  
  -------------- celery@GowPC v5.5.3 (immunity)
 --- ***** ----- 
--- ******* ---- Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39 2025-07-29 19:00:28
+-- ******* ---- Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39 2025-08-01 09:43:11
 - *** --- * --- 
 - ** ---------- [config]
-- ** ---------- .> app:         photon_cure:0x77da9feac590
+- ** ---------- .> app:         photon_cure:0x7ce2dc9c89b0
 - ** ---------- .> transport:   redis://localhost:6379/0
 - ** ---------- .> results:     disabled://
 - *** --- * --- .> concurrency: 16 (prefork)
@@ -21,7 +21,7 @@ nohup: ignoring input
   . accounts.tasks.send_welcome_email_task
   . photon_cure.celery.debug_task
 
-[2025-07-29 19:00:29,326: INFO/MainProcess] Connected to redis://localhost:6379/0
-[2025-07-29 19:00:29,328: INFO/MainProcess] mingle: searching for neighbors
-[2025-07-29 19:00:30,336: INFO/MainProcess] mingle: all alone
-[2025-07-29 19:00:30,354: INFO/MainProcess] celery@GowPC ready.
+[2025-08-01 09:43:14,898: INFO/MainProcess] Connected to redis://localhost:6379/0
+[2025-08-01 09:43:14,903: INFO/MainProcess] mingle: searching for neighbors
+[2025-08-01 09:43:15,911: INFO/MainProcess] mingle: all alone
+[2025-08-01 09:43:15,921: INFO/MainProcess] celery@GowPC ready.

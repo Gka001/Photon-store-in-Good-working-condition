@@ -23,6 +23,15 @@ class Order(models.Model):
     payment_id = models.CharField(max_length=100, blank=True, null=True)
     email = models.EmailField()
     expected_delivery = models.DateField(null=True, blank=True)
+    city = models.CharField(max_length=100, default='Vijayawada')
+    state = models.CharField(max_length=100, default='Andhra Pradesh')
+    pincode = models.CharField(max_length=10, default='520001')
+
+    # ✅ Shiprocket shipment fields
+    awb_code = models.CharField(max_length=100, blank=True, null=True)
+    shiprocket_shipment_id = models.CharField(max_length=100, blank=True, null=True)
+    courier_company_id = models.CharField(max_length=100, blank=True, null=True)
+    tracking_url = models.URLField(blank=True, null=True)
 
     def __str__(self):
         return f"Order {self.id} - {self.status}"

@@ -2,115 +2,110 @@
 {% load static %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container mt-5 mb-5">
     <h2 class="mb-4">Checkout</h2>
-
-    {% if cart|length == 0 %}
-        <p>Your cart is empty.</p>
-    {% else %}
-        <h4 class="mb-3">Order Summary</h4>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Product</th>
-                    <th>Unit Price</th>
-                    <th>Quantity</th>
-                    <th>Total Price</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in cart %}
-                    <tr>
-                        <td>{{ item.product.name }}</td>
-                        <td>₹{{ item.price }}</td>
-                        <td>{{ item.quantity }}</td>
-                        <td>₹{{ item.total_price }}</td>
-                    </tr>
-                {% endfor %}
-                <tr>
-                    <td colspan="3" class="text-end"><strong>Total</strong></td>
-                    <td><strong>₹{{ cart.get_total_price }}</strong></td>
-                </tr>
-            </tbody>
-        </table>
-
-        <h4 class="mt-5 mb-3">Shipping Information</h4>
-        <form id="razorpay-form" action="{% url 'orders:razorpay_payment' %}" method="post">
-            {% csrf_token %}
-            <div class="mb-3">
-                {{ form.name.label_tag }}  
-                {{ form.name }}
+    <form method="post" id="checkout-form">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="name">Full Name</label>
+                <input type="text" name="name" class="form-control" required id="name">
             </div>
-
-            <!-- 🔸 Added Email Field -->
-            <div class="mb-3">
-                {{ form.email.label_tag }}  
-                {{ form.email }}
+            <div class="col-md-6 mb-3">
+                <label for="email">Email Address</label>
+                <input type="email" name="email" class="form-control" required id="email">
             </div>
-
-            <div class="mb-3">
-                {{ form.address.label_tag }}
-                {{ form.address }}
+            <div class="col-md-6 mb-3">
+                <label for="phone">Phone Number</label>
+                <input type="text" name="phone" class="form-control" required id="phone">
             </div>
-            <div class="mb-3">
-                {{ form.phone.label_tag }}
-                {{ form.phone }}
+            <div class="col-md-12 mb-3">
+                <label for="address">Address</label>
+                <textarea name="address" class="form-control" required id="address"></textarea>
+            </div>    
+            <div class="col-md-6 mb-3">
+                <label for="pincode">Pincode</label>
+                <input type="text" name="pincode" class="form-control" required id="pincode">
             </div>
-            <button type="button" id="pay-button" class="btn btn-warning mt-3">Pay with Razorpay</button>
-        </form>
+            <div class="col-md-6 mb-3">
+                <label for="city">City</label>
+                <input type="text" name="city" class="form-control" required id="city">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="state">State</label>
+                <input type="text" name="state" class="form-control" required id="state">
+            </div>
+        </div>
 
-        <!-- Razorpay Script -->
-        <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-        <script>
-            document.getElementById('pay-button').onclick = function (e) {
-                e.preventDefault();
-
-                fetch("{% url 'orders:create_razorpay_order' %}", {
-                    method: "POST",
-                    headers: {
-                        "X-CSRFToken": "{{ csrf_token }}",
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({})
-                })
-                .then(response => response.json())
-                .then(data => {
-                    const options = {
-                        "key": "{{ razorpay_key_id }}",
-                        "amount": data.amount,
-                        "currency": "INR",
-                        "name": "Photon Cure",
-                        "description": "Order Payment",
-                        "order_id": data.razorpay_order_id,
-                        "handler": function (response) {
-                            const form = document.getElementById('razorpay-form');
-
-                            const name = document.querySelector('[name="name"]').value;
-                            const phone = document.querySelector('[name="phone"]').value;
-                            const address = document.querySelector('[name="address"]').value;
-
-                            // 🔸 New line to capture email
-                            const email = document.querySelector('[name="email"]').value;
-
-                            form.innerHTML += `<input type="hidden" name="razorpay_payment_id" value="${response.razorpay_payment_id}">`;
-                            form.innerHTML += `<input type="hidden" name="razorpay_order_id" value="${response.razorpay_order_id}">`;
-                            form.innerHTML += `<input type="hidden" name="razorpay_signature" value="${response.razorpay_signature}">`;
-                            form.innerHTML += `<input type="hidden" name="name" value="${name}">`;
-                            form.innerHTML += `<input type="hidden" name="email" value="${email}">`; <!-- 🔸 Added -->
-                            form.innerHTML += `<input type="hidden" name="phone" value="${phone}">`;
-                            form.innerHTML += `<input type="hidden" name="address" value="${address}">`;
-
-                            form.submit();
-                        },
-                        "theme": {
-                            "color": "#0b7285"
-                        }
-                    };
-                    const rzp = new Razorpay(options);
-                    rzp.open();
-                });
-            };
-        </script>
-    {% endif %}
+        <h4 class="mt-4">Payment</h4>
+        <button type="button" id="rzp-button" class="btn btn-success mt-3">Pay with Razorpay</button>
+    </form>
 </div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+    document.getElementById('rzp-button').onclick = function () {
+        const form = document.getElementById('checkout-form');
+        const formData = new FormData(form);
+        const formObject = {};
+        formData.forEach((value, key) => formObject[key] = value);
+
+        fetch("{% url 'orders:create_razorpay_order' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            const options = {
+                "key": "{{ razorpay_key_id }}",
+                "amount": data.amount,
+                "currency": "INR",
+                "name": "Photon Cure",
+                "description": "Order Payment",
+                "order_id": data.razorpay_order_id,
+                "handler": function (response) {
+                    const payload = {
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_signature: response.razorpay_signature,
+                        name: formObject.name,
+                        email: formObject.email,
+                        phone: formObject.phone,
+                        address: formObject.address,
+                        city: formObject.city,
+                        state: formObject.state,
+                        pincode: formObject.pincode
+                    };
+
+                    fetch("{% url 'orders:razorpay_payment' %}", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}"
+                        },
+                        body: JSON.stringify(payload)
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            window.location.href = "{% url 'orders:order_success' %}";
+                        } else {
+                            alert(result.error || "Payment failed.");
+                        }
+                    });
+                },
+                "theme": {
+                    "color": "#0e9f6e"
+                }
+            };
+            const rzp = new Razorpay(options);
+            rzp.open();
+        });
+    };
+</script>
+
 {% endblock %}

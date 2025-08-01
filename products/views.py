@@ -5,6 +5,8 @@ from .models import Product, Category, Review
 from django.db.models import Q, Avg, Count
 from django.contrib.postgres.search import TrigramSimilarity
 from django.db.models.functions import Greatest
+from django.core.paginator import Paginator
+
 
 def product_list(request):
     query = request.GET.get('q', '').strip()
@@ -12,6 +14,7 @@ def product_list(request):
     sort = request.GET.get('sort')
     min_price = request.GET.get('min_price')
     max_price = request.GET.get('max_price')
+    page = request.GET.get('page', 1)
 
     products = Product.objects.all()
     categories = Category.objects.all()
@@ -61,8 +64,14 @@ def product_list(request):
     elif sort == 'rating_low_high':
         products = products.order_by('average_rating')
 
+    # Pagination
+    paginator = Paginator(products, 12)  # 12 products per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
     return render(request, 'products/product_list.html', {
-        'products': products,
+        'products': page_obj,
+        'page_obj': page_obj,
         'categories': categories,
         'selected_category': category_id,
         'selected_sort': sort,

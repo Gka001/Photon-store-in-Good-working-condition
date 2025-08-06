@@ -1,21 +1,11 @@
 import requests
 from django.conf import settings
 from orders.models import Order
-
-
-def get_shiprocket_token():
-    url = "https://apiv2.shiprocket.in/v1/external/auth/login"
-    payload = {
-        "email": settings.SHIPROCKET_EMAIL,
-        "password": settings.SHIPROCKET_PASSWORD,
-    }
-    response = requests.post(url, json=payload)
-    response.raise_for_status()
-    return response.json().get("token")
+import json
 
 
 def create_shiprocket_shipment(order: Order):
-    token = get_shiprocket_token()
+    token = settings.SHIPROCKET_API_TOKEN
 
     headers = {
         "Content-Type": "application/json",
@@ -34,8 +24,9 @@ def create_shiprocket_shipment(order: Order):
     payload = {
         "order_id": str(order.id),
         "order_date": order.order_date.strftime("%Y-%m-%d"),
-        "pickup_location": "Primary",  # Make sure this matches the location name in Shiprocket
+        "pickup_location": "Home",  # Make sure this matches the location name in Shiprocket
         "billing_customer_name": order.name,
+        "billing_last_name": "",
         "billing_address": order.address,
         "billing_city": order.city,
         "billing_state": order.state,
@@ -53,10 +44,18 @@ def create_shiprocket_shipment(order: Order):
         "weight": 0.5,
     }
 
+    print("📦 Shiprocket Payload:")
+    print(json.dumps(payload, indent=2))
+
     response = requests.post(
         "https://apiv2.shiprocket.in/v1/external/orders/create/adhoc",
         headers=headers,
         json=payload,
     )
+
+    print("📨 Shiprocket Response:")
+    print(response.status_code)
+    print(response.text)
+
     response.raise_for_status()
     return response.json()

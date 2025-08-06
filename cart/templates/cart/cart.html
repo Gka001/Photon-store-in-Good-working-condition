@@ -5,60 +5,64 @@
 <div class="container mt-5">
     <h2 class="mb-4">Your Shopping Cart</h2>
 
-    {% if cart|length == 0 %}
+    {% if cart_items|length == 0 %}
         <p>Your cart is empty.</p>
     {% else %}
-        <table class="table table-bordered align-middle">
-            <thead>
-                <tr>
-                    <th>Product</th>
-                    <th>Unit Price</th>
-                    <th>Quantity</th>
-                    <th>Total Price</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in cart %}
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle text-nowrap">
+                <thead class="table-light">
                     <tr>
-                        <td>{{ item.product.name }}</td>
-                        <td>₹{{ item.price }}</td>
-                        <td>
-                            <div class="d-flex align-items-center justify-content-start">
-                                <form action="{% url 'cart:cart_decrease' item.product.id %}" method="post" class="me-2">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary">−</button>
-                                </form>
-
-                                <span>{{ item.quantity }}</span>
-
-                                <form action="{% url 'cart:cart_increase' item.product.id %}" method="post" class="ms-2">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary">+</button>
-                                </form>
-                            </div>
-                        </td>
-                        <td>₹{{ item.total_price }}</td>
-                        <td>
-                            <form action="{% url 'cart:cart_remove' item.product.id %}" method="post">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-danger">Remove</button>
-                            </form>
-                        </td>
+                        <th style="min-width: 120px;">Product</th>
+                        <th style="min-width: 60px;">Unit ₹</th>
+                        <th style="min-width: 100px;">Qty</th>
+                        <th style="min-width: 70px;">Price</th>
+                        <th style="min-width: 70px;">Action</th>
                     </tr>
-                {% endfor %}
-                <tr>
-                    <td colspan="3" class="text-end"><strong>Total</strong></td>
-                    <td colspan="2"><strong>₹{{ cart.get_total_price }}</strong></td>
-                </tr>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {% for item in cart_items %}
+                        <tr>
+                            <td class="text-wrap" style="max-width: 150px;">{{ item.product.name }}</td>
+                            <td>₹{{ item.product.price|floatformat:2 }}</td>
+                            <td>
+                                <div class="d-flex align-items-center justify-content-center flex-wrap gap-2">
+                                    <form action="{% url 'cart:cart_decrease' item.product.id %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">−</button>
+                                    </form>
+
+                                    <span>{{ item.quantity }}</span>
+
+                                    <form action="{% url 'cart:cart_increase' item.product.id %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">+</button>
+                                    </form>
+                                </div>
+                            </td>
+                            <td>₹{{ item.get_total_price|floatformat:2 }}</td>
+                            <td>
+                                <form action="{% url 'cart:cart_remove' item.product.id %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-danger">&times;</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    <tr>
+                        <td colspan="3" class="text-end"><strong>Total</strong></td>
+                        <td colspan="2"><strong>₹{{ total_price|floatformat:2 }}</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     {% endif %}
 
-    <a href="{% url 'products:product_list' %}" class="btn btn-primary">Continue Shopping</a>   
-     
-    {% if cart|length > 0 %}
-        <a href="{% url 'orders:checkout' %}" class="btn btn-success mt-3">Proceed to Checkout</a>
-    {% endif %}
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
+        <a href="{% url 'products:product_list' %}" class="btn btn-primary w-100 w-md-auto">Continue Shopping</a>
+
+        {% if cart_items|length > 0 %}
+            <a href="{% url 'orders:checkout' %}" class="btn btn-success w-100 w-md-auto">Proceed to Checkout</a>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

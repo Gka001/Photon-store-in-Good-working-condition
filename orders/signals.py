@@ -30,9 +30,9 @@ def notify_user_on_status_change(sender, instance, **kwargs):
             # 🚀 Create shipment via Shiprocket API
             try:
                 shipment_response = create_shiprocket_shipment(instance)
-                # You can optionally store shipment ID, tracking ID, etc. from response
-                # Example:
-                # instance.shiprocket_shipment_id = shipment_response.get('shipment_id')
+                instance.awb_code = shipment_response.get("awb_code")  # important
+                instance.shiprocket_shipment_id = shipment_response.get("shipment_id")  # optional
+
             except Exception as e:
                 print(f"Error creating Shiprocket shipment: {e}")
 

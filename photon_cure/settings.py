@@ -25,7 +25,12 @@ SECRET_KEY = 'django-insecure-j51-7lt46&qlnp%$otp^rd(f)mm11+)x_%$vq6f3dnaz*$&u0a
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+import os
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ngrok_host = os.environ.get('NGROK_HOST')
+if ngrok_host:
+    ALLOWED_HOSTS.append(ngrok_host)
+    CSRF_TRUSTED_ORIGINS = [f"https://{ngrok_host}"]
 
 
 # Application definition
@@ -66,7 +71,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'cart.context_processors.cart',
+                'cart.context_processors.cart_item_count',
+                
             ],
         },
     },
@@ -178,3 +184,5 @@ CELERY_TASK_SERIALIZER = 'json'
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
 SHIPROCKET_API_TOKEN = config("SHIPROCKET_API_TOKEN")
+
+

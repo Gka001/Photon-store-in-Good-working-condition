@@ -71,7 +71,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'cart.context_processors.cart_item_count',
+                'cart.context_processors.cart_count',
                 
             ],
         },
@@ -185,4 +185,5 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 
 SHIPROCKET_API_TOKEN = config("SHIPROCKET_API_TOKEN")
 
+STATICFILES_DIRS = [BASE_DIR / 'photon_cure' / 'static']
 

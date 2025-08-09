@@ -26,20 +26,18 @@
                             <td>₹{{ item.product.price|floatformat:2 }}</td>
                             <td>
                                 <div class="d-flex align-items-center justify-content-center flex-wrap gap-2">
-                                    <form action="{% url 'cart:cart_decrease' item.product.id %}" method="post">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-outline-secondary">−</button>
-                                    </form>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary cart-decrease-btn" data-product-id="{{ item.product.id }}">−</button>
 
-                                    <span>{{ item.quantity }}</span>
+                                    <span id="quantity-{{ item.product.id }}">{{ item.quantity }}</span>
 
-                                    <form action="{% url 'cart:cart_increase' item.product.id %}" method="post">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-outline-secondary">+</button>
-                                    </form>
+                                    {% if item.quantity < item.product.stock %}
+                                        <button type="button" class="btn btn-sm btn-outline-secondary cart-increase-btn" data-product-id="{{ item.product.id }}">+</button>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-outline-secondary" disabled title="Max stock reached">+</button>
+                                    {% endif %}
                                 </div>
                             </td>
-                            <td>₹{{ item.get_total_price|floatformat:2 }}</td>
+                            <td><span id="price-{{ item.product.id }}">₹{{ item.total_price|floatformat:2 }}</span></td>
                             <td>
                                 <form action="{% url 'cart:cart_remove' item.product.id %}" method="post">
                                     {% csrf_token %}
@@ -50,7 +48,7 @@
                     {% endfor %}
                     <tr>
                         <td colspan="3" class="text-end"><strong>Total</strong></td>
-                        <td colspan="2"><strong>₹{{ total_price|floatformat:2 }}</strong></td>
+                        <td colspan="2"><strong><span id="cart-total">₹{{ total_price|floatformat:2 }}</span></strong></td>
                     </tr>
                 </tbody>
             </table>
@@ -65,4 +63,6 @@
         {% endif %}
     </div>
 </div>
+
+<script src="{% static 'cart.js' %}"></script>
 {% endblock %}

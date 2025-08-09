@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import CheckoutForm
-from cart.cart import Cart
+from cart.models import CartItem
 from .models import Order, OrderItem
 from django.core.mail import send_mail
 from django.conf import settings
@@ -17,23 +17,32 @@ from .utils import get_delivery_range
 from products.models import Review, Product
 from django.db import transaction
 from django.urls import reverse
+from cart.utils import get_user_cart_total, get_user_cart
 
 
 @login_required
 def checkout(request):
-    cart = Cart(request)
     form = CheckoutForm()
+    total_price = get_user_cart_total(request.user)
+
+    latest_order = Order.objects.filter(user=request.user).order_by('-order_date').first()
+    delivery_range = get_delivery_range(latest_order) if latest_order else None
+
+    cart_items = get_user_cart(request.user)
+
     return render(request, 'cart/checkout.html', {
-        'cart': cart,
         'form': form,
-        'razorpay_key_id': settings.RAZORPAY_KEY_ID
+        'razorpay_key_id': settings.RAZORPAY_KEY_ID,
+        'cart_total': total_price,
+        'delivery_range': delivery_range,
+        'cart_items': cart_items,
     })
+
 
 @csrf_exempt
 def create_razorpay_order(request):
     if request.method == "POST":
-        cart = Cart(request)
-        total_amount = int(cart.get_total_price() * 100)
+        total_amount = int(get_user_cart_total(request.user) * 100)
 
         client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
         order_data = {
@@ -48,13 +57,16 @@ def create_razorpay_order(request):
             "amount": razorpay_order['amount']
         })
 
+    return HttpResponseBadRequest("Invalid request method.")
+
+
 @csrf_exempt
 @transaction.atomic
 def razorpay_payment(request):
-    cart = Cart(request)
-
     if request.method == 'POST':
         data = json.loads(request.body)
+        cart_items = get_user_cart(request.user)
+        total_price = get_user_cart_total(request.user)
 
         name = data.get('name')
         address = data.get('address')
@@ -75,11 +87,9 @@ def razorpay_payment(request):
         ).hexdigest()
 
         if generated_signature == razorpay_signature:
-            for item in cart:
-                product = item['product']
-                quantity = item['quantity']
-                if product.stock < quantity:
-                    return JsonResponse({'success': False, 'error': f"Insufficient stock for {product.name}"})
+            for item in cart_items:
+                if item.product.stock < item.quantity:
+                    return JsonResponse({'success': False, 'error': f"Insufficient stock for {item.product.name}"})
 
             order = Order.objects.create(
                 name=name,
@@ -89,43 +99,37 @@ def razorpay_payment(request):
                 pincode=pincode,
                 phone=phone,
                 email=email,
-                total_price=cart.get_total_price(),
+                total_price=total_price,
                 status='Pending',
-                user=request.user if request.user.is_authenticated else None,
+                user=request.user,
                 payment_id=razorpay_payment_id
             )
 
-            for item in cart:
-                product = item['product']
-                quantity = item['quantity']
-                price = item['price']
-
+            for item in cart_items:
                 OrderItem.objects.create(
                     order=order,
-                    product=product,
-                    price=price,
-                    quantity=quantity
+                    product=item.product,
+                    price=item.product.price,
+                    quantity=item.quantity
                 )
-
-                product.stock -= quantity
-                product.save()
+                item.product.stock -= item.quantity
+                item.product.save()
 
             if email:
                 subject = f"Photon Cure - Order #{order.id} Confirmation"
                 message = render_to_string('orders/email/order_confirmation.txt', {
                     'order': order,
-                    'cart': cart,
+                    'cart_items': cart_items,
                     'expected_start': order.expected_delivery_range[0],
                     'expected_end': order.expected_delivery_range[1],
                 })
                 send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [email])
 
             request.session['latest_order_id'] = order.id
-            cart.clear()
+            CartItem.objects.filter(user=request.user).delete()
+
             return JsonResponse({'success': True, 'redirect_url': reverse('orders:order_success')})
 
-
-        # Signature mismatch
         return JsonResponse({'success': False, 'error': 'Payment verification failed'}, status=400)
 
 
@@ -148,8 +152,10 @@ def order_success(request):
         'expected_end': expected_end,
     })
 
+
 def payment_cancel(request):
     return render(request, 'orders/payment_cancel.html')
+
 
 @login_required
 def order_history(request):
@@ -170,6 +176,7 @@ def order_history(request):
         'reviewed_products': reviewed_products,
     })
 
+
 @login_required
 def order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
@@ -180,6 +187,7 @@ def order_detail(request, order_id):
         'expected_start': expected_start,
         'expected_end': expected_end,
     })
+
 
 @login_required
 def cancel_order(request, order_id):

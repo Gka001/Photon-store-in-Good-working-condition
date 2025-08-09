@@ -1,131 +1,101 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.template.loader import render_to_string
-from django.views.decorators.http import require_POST
-from django.http import JsonResponse
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db import models
+from django.contrib import messages
+from django.http import JsonResponse
 from products.models import Product
 from .models import CartItem
-from .utils import get_user_cart, get_user_cart_total
+from django.template.loader import render_to_string
 
+@login_required
+def cart_detail(request):
+    cart_items = CartItem.objects.filter(user=request.user)
+    total_price = sum(item.total_price for item in cart_items)
+    return render(request, 'cart/cart.html', {
+        'cart_items': cart_items,
+        'total_price': total_price,
+    })
 
-def get_cart_items(request):
-    return get_user_cart(request.user)
-
-
-@require_POST
 @login_required
 def cart_add(request, product_id):
     product = get_object_or_404(Product, id=product_id)
-    quantity = int(request.POST.get('quantity', 1))
-    override = request.POST.get('override') == 'true'
+    cart_item, created = CartItem.objects.get_or_create(user=request.user, product=product)
 
-    item, created = CartItem.objects.get_or_create(user=request.user, product=product)
-
-    if not created:
-        new_quantity = quantity if override else item.quantity + quantity
+    if created:
+        cart_item.quantity = 1
     else:
-        new_quantity = quantity
+        cart_item.quantity += 1
+    cart_item.save()
 
-    if new_quantity > product.stock:
-        message = f"Only {product.stock} items of '{product.name}' in stock."
-        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'error', 'message': message})
-        messages.error(request, message)
-        return redirect('products:product_detail', slug=product.slug)
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({
+            "success": True,
+            "message": f"{product.name} added to cart.",
+        })
 
-    item.quantity = new_quantity
-    item.save()
+    messages.success(request, f"{product.name} added to cart.")
+    return redirect('products:product_list')
 
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        cart_count = get_user_cart(request.user).count()
-        return JsonResponse({'status': 'success', 'message': 'Added to cart', 'cart_count': cart_count})
-
-    return redirect('cart:cart_detail')
-
-
-@require_POST
 @login_required
 def cart_remove(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     CartItem.objects.filter(user=request.user, product=product).delete()
+    messages.info(request, f"{product.name} removed from cart.")
+    return redirect('cart:cart_detail')
 
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        items = get_cart_items(request)
-        total_price = get_user_cart_total(request.user)
-        html = render_to_string('cart/_mini_cart.html', {'cart_items': items, 'total_price': total_price}, request=request)
-        cart_count = items.count()
-        return JsonResponse({'status': 'success', 'message': 'Item removed', 'html': html, 'cart_count': cart_count})
+@login_required
+def cart_increase(request, product_id):
+    cart_item = get_object_or_404(CartItem, user=request.user, product_id=product_id)
+    cart_item.quantity += 1
+    cart_item.save()
+
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        cart_items = CartItem.objects.filter(user=request.user)
+        cart_total = sum(item.total_price for item in cart_items)
+        return JsonResponse({
+            'quantity': cart_item.quantity,
+            'item_total': float(cart_item.total_price),
+            'cart_total': float(cart_total),
+        })
 
     return redirect('cart:cart_detail')
 
-
 @login_required
-def cart_detail(request):
-    items = get_cart_items(request)
-    total_price = get_user_cart_total(request.user)
-    return render(request, 'cart/cart.html', {'cart_items': items, 'total_price': total_price})
+def cart_decrease(request, product_id):
+    cart_item = get_object_or_404(CartItem, user=request.user, product_id=product_id)
+    if cart_item.quantity > 1:
+        cart_item.quantity -= 1
+        cart_item.save()
+        quantity = cart_item.quantity
+        item_total = cart_item.total_price
+    else:
+        cart_item.delete()
+        quantity = 0
+        item_total = 0
 
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        cart_items = CartItem.objects.filter(user=request.user)
+        cart_total = sum(item.total_price for item in cart_items)
+        return JsonResponse({
+            'quantity': quantity,
+            'item_total': float(item_total),
+            'cart_total': float(cart_total),
+        })
+
+    return redirect('cart:cart_detail')
 
 @login_required
 def cart_mini_preview(request):
-    items = get_cart_items(request)
-    total_price = get_user_cart_total(request.user)
-    html = render_to_string('cart/_mini_cart.html', {'cart_items': items, 'total_price': total_price}, request=request)
+    cart_items = CartItem.objects.filter(user=request.user)
+    total_price = sum(item.total_price for item in cart_items)
+    html = render_to_string('cart/_mini_cart.html', {
+        'cart_items': cart_items,
+        'total_price': total_price,
+    })
     return JsonResponse({'html': html})
 
-
-@require_POST
 @login_required
-def cart_increase(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    try:
-        item = CartItem.objects.get(user=request.user, product=product)
-        if item.quantity + 1 <= product.stock:
-            item.quantity += 1
-            item.save()
-        else:
-            messages.error(request, f"Cannot increase. Only {product.stock} in stock.")
-    except CartItem.DoesNotExist:
-        messages.error(request, "Item not found in cart.")
-
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        items = get_cart_items(request)
-        total_price = get_user_cart_total(request.user)
-        html = render_to_string('cart/_mini_cart.html', {'cart_items': items, 'total_price': total_price}, request=request)
-        cart_count = items.count()
-        return JsonResponse({'status': 'success', 'message': 'Quantity increased', 'html': html, 'cart_count': cart_count})
-
-    return redirect('cart:cart_detail')
-
-
-@require_POST
-@login_required
-def cart_decrease(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
-    try:
-        item = CartItem.objects.get(user=request.user, product=product)
-        if item.quantity > 1:
-            item.quantity -= 1
-            item.save()
-        else:
-            item.delete()
-    except CartItem.DoesNotExist:
-        messages.error(request, "Item not found in cart.")
-
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        items = get_cart_items(request)
-        total_price = get_user_cart_total(request.user)
-        html = render_to_string('cart/_mini_cart.html', {'cart_items': items, 'total_price': total_price}, request=request)
-        cart_count = items.count()
-        return JsonResponse({'status': 'success', 'message': 'Quantity decreased', 'html': html, 'cart_count': cart_count})
-
-    return redirect('cart:cart_detail')
-
-
-@login_required
-def cart_count(request):
-    total_quantity = CartItem.objects.filter(user=request.user).aggregate(total=models.Sum('quantity'))['total'] or 0
-    return JsonResponse({'cart_count': total_quantity})
-
+def cart_count_view(request):
+    count = 0
+    if request.user.is_authenticated:
+        count = sum(item.quantity for item in CartItem.objects.filter(user=request.user))
+    return JsonResponse({"cart_count": count})

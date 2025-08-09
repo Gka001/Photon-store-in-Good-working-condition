@@ -24,4 +24,4 @@ def update_user_cart_quantity(user, product_id, delta):
             item.save()
 
 def get_user_cart_total(user):
-    return sum(item.get_total_price() for item in get_user_cart(user))
+    return sum(item.total_price for item in get_user_cart(user))

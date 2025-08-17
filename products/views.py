@@ -25,7 +25,7 @@ def product_list(request):
                 TrigramSimilarity('name', query),
                 TrigramSimilarity('description', query)
             )
-        ).filter(similarity__gt=0.2).order_by('-similarity')
+        ).filter(similarity__gt=0.2).order_by('-similarity', '-id')  # tie-breaker for stability
 
     if category_id and category_id.isdigit():
         products = products.filter(category_id=int(category_id))
@@ -48,21 +48,35 @@ def product_list(request):
         review_count=Count('reviews')
     )
 
-    # Sort options
+    # Sort options (add stable tie-breakers so pagination is deterministic)
+    sorted_applied = False
     if sort == 'price_asc':
-        products = products.order_by('price')
+        products = products.order_by('price', 'id')
+        sorted_applied = True
     elif sort == 'price_desc':
-        products = products.order_by('-price')
+        products = products.order_by('-price', 'id')
+        sorted_applied = True
     elif sort == 'newest':
         products = products.order_by('-id')
+        sorted_applied = True
     elif sort == 'name_asc':
-        products = products.order_by('name')
+        products = products.order_by('name', 'id')
+        sorted_applied = True
     elif sort == 'name_desc':
-        products = products.order_by('-name')
+        products = products.order_by('-name', 'id')
+        sorted_applied = True
     elif sort == 'rating_high_low':
-        products = products.order_by('-average_rating')
+        # fall back to review_count and id as tie-breakers
+        products = products.order_by('-average_rating', '-review_count', '-id')
+        sorted_applied = True
     elif sort == 'rating_low_high':
-        products = products.order_by('average_rating')
+        products = products.order_by('average_rating', 'review_count', 'id')
+        sorted_applied = True
+
+    # If no explicit sort was chosen and no similarity ordering was applied,
+    # default to a deterministic order to silence the warning.
+    if not sorted_applied and not query:
+        products = products.order_by('-id')
 
     # Pagination
     paginator = Paginator(products, 12)  # 12 products per page

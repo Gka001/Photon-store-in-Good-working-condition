@@ -21,7 +21,7 @@
                 </thead>
                 <tbody>
                     {% for item in cart_items %}
-                        <tr>
+                        <tr data-product-row-id="{{ item.product.id }}" data-max="{{ item.product.stock }}">
                             <td class="text-wrap" style="max-width: 150px;">{{ item.product.name }}</td>
                             <td>₹{{ item.product.price|floatformat:2 }}</td>
                             <td>
@@ -30,11 +30,24 @@
 
                                     <span id="quantity-{{ item.product.id }}">{{ item.quantity }}</span>
 
-                                    {% if item.quantity < item.product.stock %}
-                                        <button type="button" class="btn btn-sm btn-outline-secondary cart-increase-btn" data-product-id="{{ item.product.id }}">+</button>
-                                    {% else %}
-                                        <button class="btn btn-sm btn-outline-secondary" disabled title="Max stock reached">+</button>
-                                    {% endif %}
+                                    <!-- Always a single + button (JS will enable/disable it) -->
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm cart-increase-btn {% if item.quantity < item.product.stock %}btn-outline-secondary{% else %}btn-secondary{% endif %}"
+                                        data-product-id="{{ item.product.id }}"
+                                        data-max="{{ item.product.stock }}"
+                                        {% if item.quantity >= item.product.stock %}disabled title="Max stock reached"{% endif %}
+                                    >+</button>
+
+                                    <div class="w-100 text-center mt-1" style="line-height:1;">
+                                        <small id="stock-hint-{{ item.product.id }}" class="text-muted">
+                                            {% if item.product.stock <= 5 %}Only {{ item.product.stock }} left{% endif %}
+                                        </small>
+                                        <small id="max-msg-{{ item.product.id }}"
+                                               class="text-danger {% if item.quantity < item.product.stock %}d-none{% endif %}">
+                                            Max stock reached
+                                        </small>
+                                    </div>
                                 </div>
                             </td>
                             <td><span id="price-{{ item.product.id }}">₹{{ item.total_price|floatformat:2 }}</span></td>
@@ -64,5 +77,6 @@
     </div>
 </div>
 
-<script src="{% static 'cart.js' %}"></script>
+<!-- Point to /static/js/cart.js and bust cache -->
+<script src="{% static 'js/cart.js' %}?v=stock-ui-6"></script>
 {% endblock %}

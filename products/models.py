@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
-from django.db.models import Avg
+from django.db.models import Avg, Q, F  # added Q, F for constraints
 from django.conf import settings
 
 
@@ -21,7 +21,8 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     image = models.ImageField(upload_to='product_images/')
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
-    stock = models.PositiveBigIntegerField(default=0)
+    stock = models.PositiveBigIntegerField(default=0)      # on-hand
+    allocated = models.PositiveBigIntegerField(default=0)  # reserved for unpaid orders (NEW)
 
     search_vector = SearchVectorField(null=True, editable=False)
 
@@ -32,12 +33,25 @@ class Product(models.Model):
         indexes = [
             GinIndex(fields=["search_vector"]),
         ]
+        constraints = [
+            # Ensure we never allocate more than we have on hand
+            models.CheckConstraint(
+                check=Q(allocated__lte=F('stock')),
+                name="product_allocated_lte_stock",
+            ),
+        ]
+
+    @property
+    def available(self):
+        # Inventory that can still be sold now
+        return int(self.stock) - int(self.allocated)
 
     def average_rating(self):
         return self.reviews.aggregate(avg=Avg('rating'))['avg'] or 0
-    
+
     def is_in_stock(self):
-        return self.stock > 0
+        # use available instead of raw stock
+        return self.available > 0
 
 
 class Review(models.Model):

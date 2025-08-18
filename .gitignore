@@ -8,3 +8,7 @@ venv/
 # Environment variables
 .env
 venv/
+
+# Ignore logs
+logs/
+*.log

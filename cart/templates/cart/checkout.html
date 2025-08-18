@@ -73,6 +73,8 @@
 </div>
 
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<!-- KEEP your legacy script for rollback (will be disabled by the block below) -->
 <script>
     document.getElementById('rzp-button').onclick = function () {
         const form = document.getElementById('checkout-form');
@@ -86,9 +88,7 @@
                 "Content-Type": "application/json",
                 "X-CSRFToken": "{{ csrf_token }}"
             },
-            body: JSON.stringify({
-                total: {{ cart_total|floatformat:0 }}
-            })
+            body: JSON.stringify({ total: {{ cart_total|floatformat:0 }} })
         })
         .then(response => response.json())
         .then(data => {
@@ -124,13 +124,112 @@
                         }
                     });
                 },
-                "theme": {
-                    "color": "#0e9f6e"
-                }
+                "theme": { "color": "#0e9f6e" }
             };
             const rzp = new Razorpay(options);
             rzp.open();
         });
     };
+</script>
+
+<!-- NEW reserved flow; DISABLES the legacy onclick and binds only the reserved handler -->
+<script>
+function getCookie(name){
+  const m = document.cookie.match(new RegExp('(^| )'+name+'=([^;]+)'));
+  return m ? decodeURIComponent(m[2]) : '';
+}
+
+async function createRzpOrderWithReservation() {
+  const form = document.getElementById('checkout-form');
+  const payload = {
+    name: form.querySelector('[name="name"]').value,
+    email: form.querySelector('[name="email"]').value,
+    phone: form.querySelector('[name="phone"]').value,
+    address: form.querySelector('[name="address"]').value,
+    pincode: form.querySelector('[name="pincode"]').value,
+    city: form.querySelector('[name="city"]').value,
+    state: form.querySelector('[name="state"]').value
+  };
+
+  const res = await fetch("{% url 'orders:create_razorpay_order_reserved' %}", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.success === false) {
+    const msg = data.error || "Some items just went out of stock. Please update your cart.";
+    if (window.Swal) Swal.fire({icon: "warning", title: "Out of stock", text: msg});
+    else alert(msg);
+    return null;
+  }
+  return data; // { success, razorpay_order_id, amount, local_order_id }
+}
+
+async function releasePending(localOrderId) {
+  try {
+    await fetch("{% url 'orders:release_pending_order' %}", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
+      body: JSON.stringify({ local_order_id: localOrderId })
+    });
+  } catch (e) { /* ignore */ }
+}
+
+async function startReservedPayment() {
+  const r = await createRzpOrderWithReservation();
+  if (!r) return;
+
+  const options = {
+    key: "{{ razorpay_key_id }}",
+    order_id: r.razorpay_order_id,
+    amount: r.amount,
+    currency: "INR",
+    name: "Photon Cure",
+    description: "Order Payment",
+    handler: async function (resp) {
+      const finalizeRes = await fetch("{% url 'orders:razorpay_finalize_reserved' %}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
+        body: JSON.stringify({
+          local_order_id: r.local_order_id,
+          razorpay_payment_id: resp.razorpay_payment_id,
+          razorpay_order_id: resp.razorpay_order_id,
+          razorpay_signature: resp.razorpay_signature
+        })
+      });
+      const data = await finalizeRes.json().catch(() => ({}));
+      if (!finalizeRes.ok || data.success === false) {
+        const msg = data.error || "We couldn't place your order. Any charge was reversed.";
+        if (window.Swal) Swal.fire({icon: "warning", title: "Order not placed", text: msg});
+        else alert(msg);
+        await releasePending(r.local_order_id);
+        return;
+      }
+      window.location.href = data.redirect_url;
+    },
+    modal: { ondismiss: async function () { await releasePending(r.local_order_id); } },
+    theme: { color: "#0e9f6e" }
+  };
+
+  const rzp = new Razorpay(options);
+  rzp.on("payment.failed", async function () {
+    if (window.Swal) Swal.fire({icon: "info", title: "Payment not completed", text: "You have not been charged."});
+    else alert("Payment not completed.");
+    await releasePending(r.local_order_id);
+  });
+  rzp.open();
+}
+
+// Disable legacy onclick and bind only the reserved flow
+const btn = document.getElementById('rzp-button');
+if (btn) {
+  btn.onclick = null; // <-- important: neutralize the legacy flow
+  btn.addEventListener('click', function (e) {
+    e.preventDefault();
+    startReservedPayment();
+  });
+}
 </script>
 {% endblock %}
